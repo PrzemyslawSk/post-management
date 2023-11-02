@@ -5,9 +5,12 @@ import com.przemyslawsk.postmanagement.dto.PostMapper;
 import com.przemyslawsk.postmanagement.exception.NotFoundException;
 import com.przemyslawsk.postmanagement.model.Post;
 import com.przemyslawsk.postmanagement.repository.PostRepository;
+import com.przemyslawsk.postmanagement.util.ImageUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,8 +22,13 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostDTO> getAllPosts() {
         List<Post> posts = repository.findAll();
+
         return posts.stream()
-                .map(PostMapper::mapPostToDTO)
+                .map(post -> PostDTO.builder()
+                        .title(post.getTitle())
+                        .description(post.getDescription())
+                        .image(ImageUtils.decompressImage(post.getImage()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -29,17 +37,28 @@ public class PostServiceImpl implements PostService {
         Optional<Post> post = repository.findById(id);
 
         if(post.isPresent()){
-            PostDTO postDTO = PostMapper
-                    .mapPostToDTO(post.get());
+
+            PostDTO postDTO = PostDTO.builder()
+                    .title(post.get().getTitle())
+                    .description(post.get().getDescription())
+                    .image(ImageUtils.decompressImage(post.get().getImage()))
+                    .build();
             return postDTO;
+
         } else {
             throw new NotFoundException("Post with id " + id + " not found!");
         }
     }
 
     @Override
-    public PostDTO createPost(PostDTO postDTO) {
-        Post post = PostMapper.mapToPost(postDTO);
+    public PostDTO createPost(PostDTO postDTO, MultipartFile file) throws IOException {
+
+        Post post = Post.builder()
+                .title(postDTO.getTitle())
+                .description(postDTO.getDescription())
+                .image(ImageUtils.compressImage(file.getBytes()))
+                .build();
+
         Post savedPost = repository.save(post);
         PostDTO savedPostDTO = PostMapper.mapPostToDTO(savedPost);
 
@@ -47,13 +66,13 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostDTO updatePost(Long id, PostDTO postDTO) {
+    public PostDTO updatePost(Long id, PostDTO postDTO, MultipartFile file) throws IOException {
         Post existingPost = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Post with id " + id + " not found!"));
 
         existingPost.setTitle(postDTO.getTitle());
         existingPost.setDescription(postDTO.getDescription());
-        existingPost.setImage(postDTO.getImage());
+        existingPost.setImage(ImageUtils.compressImage(file.getBytes()));
         Post updatedPost = repository.save(existingPost);
 
         return PostMapper.mapPostToDTO(updatedPost);

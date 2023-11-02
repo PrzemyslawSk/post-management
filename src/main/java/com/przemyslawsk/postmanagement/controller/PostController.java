@@ -7,7 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -33,16 +35,18 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO post) {
-        PostDTO savedPost = service.createPost(post);
+    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO post,
+                                              @RequestParam("img") MultipartFile file) throws IOException {
+        PostDTO savedPost = service.createPost(post, file);
         return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<PostDTO> updatePost(@PathVariable("id") Long postId,
-                                              @RequestBody PostDTO post) {
+                                              @RequestBody PostDTO post,
+                                              @RequestParam("img") MultipartFile file) throws IOException {
         try {
-            PostDTO updatedPost = service.updatePost(postId, post);
+            PostDTO updatedPost = service.updatePost(postId, post, file);
             return new ResponseEntity<>(updatedPost, HttpStatus.OK);
         } catch (NotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

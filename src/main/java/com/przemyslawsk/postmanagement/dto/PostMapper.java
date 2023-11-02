@@ -11,11 +11,4 @@ public class PostMapper {
                 .build();
     }
 
-    public static Post mapToPost(PostDTO postDTO) {
-        return Post.builder()
-                .title(postDTO.getTitle())
-                .description(postDTO.getDescription())
-                .image(postDTO.getImage())
-                .build();
-    }
 }
